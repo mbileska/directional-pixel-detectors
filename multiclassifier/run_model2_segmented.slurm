@@ -6,7 +6,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --array=0-71
+#SBATCH --array=0-35
 #SBATCH --signal=B:TERM@120
 
 set -euo pipefail
@@ -15,9 +15,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
 # Submit ranges:
-#   QKeras only: sbatch --array=0-23 run_model2_segmented.slurm
-#   LGN only:    sbatch --array=24-71 run_model2_segmented.slurm
-#   All:         sbatch --array=0-71 run_model2_segmented.slurm
+#   QKeras only: sbatch --array=0-11 run_model2_segmented.slurm
+#   LGN only:    sbatch --array=12-35 run_model2_segmented.slurm
+#   All:         sbatch --array=0-35 run_model2_segmented.slurm
 
 DATA_DIR="${DATA_DIR:-/scratch/gpfs/IOJALVO/mb7126/SmartPixels/giuData/data/ds8_only/dec6_ds8_quant}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-results/SLURM/2026_06_07_model2_segmented_top2}"
@@ -42,16 +42,13 @@ SEED="${SEED:-42}"
 
 QKERAS_MODELS=(
   "qkeras-model-2-w5a10-adc2a"
-  "qkeras-model-2-w4a8-adc2a"
 )
 
 TAUS=(20 40)
 SIZE_LABELS=(
-  "s04_p434M"
   "s05_currentWide_p577M"
 )
 LGN_MODEL_PREFIXES=(
-  "lgn-dense-2-dense-100_128_-model2lgnFull_s04_p434M"
   "lgn-dense-2-dense-100_128_-model2lgnFull"
 )
 
