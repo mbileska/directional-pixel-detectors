@@ -57,20 +57,14 @@ class LGNSpec:
 QKERAS_SPECS: Tuple[QKerasSpec, ...] = (
     QKerasSpec("qkeras-model-2-w5a10-adc2a", "w5a10", 128, 5, 10),
     QKerasSpec("qkeras-model-2-w4a8-adc2a", "w4a8", 128, 4, 8),
-    QKerasSpec("qkeras-model-2-w3a6-adc2a", "w3a6", 128, 3, 6),
-    QKerasSpec("qkeras-model-2-w2a6-adc2a", "w2a6", 128, 2, 6),
-    QKerasSpec("qkeras-model-2-w2a4-adc2a", "w2a4", 128, 2, 4),
 )
 
 
 LGN_SIZE_DIMS: Tuple[Tuple[str, str, Tuple[int, ...]], ...] = (
-    ("s01_dsNewLike_p023M", "lgn-dense-2-dense-100_128_-model2lgnFull_s01_dsNewLike", (3072, 3072, 3072)),
-    ("s02_p163M", "lgn-dense-2-dense-100_128_-model2lgnFull_s02_p163M", (6300, 6300, 6300, 4200, 4200, 4200, 3150)),
-    ("s03_p298M", "lgn-dense-2-dense-100_128_-model2lgnFull_s03_p298M", (8600, 8600, 8600, 5700, 5700, 5700, 4302)),
     ("s04_p434M", "lgn-dense-2-dense-100_128_-model2lgnFull_s04_p434M", (10400, 10400, 10400, 6900, 6900, 6900, 5202)),
     ("s05_currentWide_p577M", "lgn-dense-2-dense-100_128_-model2lgnFull", (12000, 12000, 12000, 8000, 8000, 8000, 6000)),
 )
-LGN_TAUS = (5, 10, 20, 30, 40)
+LGN_TAUS = (20, 40)
 LGN_SPECS: Tuple[LGNSpec, ...] = tuple(
     LGNSpec(name=f"{prefix}_{tau}", size_label=size_label, hidden_dims=hidden_dims, tau=float(tau))
     for size_label, prefix, hidden_dims in LGN_SIZE_DIMS

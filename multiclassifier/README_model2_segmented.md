@@ -28,23 +28,35 @@ python train_model2_segmented.py \
   --output results/model2_segmented/qkeras
 ```
 
-Submit all five QKeras quantization variants across all twelve local bins:
+Submit the two highest-precision QKeras quantization variants across all twelve local bins:
 
 ```bash
-sbatch --array=0-59 run_model2_segmented.slurm
+sbatch --array=0-23 run_model2_segmented.slurm
 ```
 
-Submit the 25 LGN size/tau variants across all twelve local bins:
+Submit the two largest LGN size variants with tau 20 and 40 across all twelve local bins:
 
 ```bash
-sbatch --array=60-359 run_model2_segmented.slurm
+sbatch --array=24-71 run_model2_segmented.slurm
+```
+
+Submit the full reduced comparison:
+
+```bash
+sbatch --array=0-71 run_model2_segmented.slurm
+```
+
+This is 72 jobs total:
+
+```text
+(2 QKeras + 2 LGN sizes * 2 taus) * 12 local bins
 ```
 
 Useful Slurm overrides:
 
 ```bash
-BALANCE_CLASSES=1 sbatch --array=0-59 run_model2_segmented.slurm
-LGN_MAX_STEPS=5000 sbatch --array=60-359 run_model2_segmented.slurm
+BALANCE_CLASSES=1 sbatch --array=0-23 run_model2_segmented.slurm
+LGN_MAX_STEPS=5000 sbatch --array=24-71 run_model2_segmented.slurm
 ```
 
 The script preserves the notebook's default preprocessing: no scaling, sparse
