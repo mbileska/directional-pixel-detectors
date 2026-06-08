@@ -75,14 +75,13 @@ The script preserves the notebook's default preprocessing: no scaling, sparse
 integer labels, and padded feature columns `14`, `15`, and `16`. Set
 `--no-pad-like-notebook` only if you intentionally want the raw CSV columns.
 
-The Slurm script writes logs and model outputs to scratch by default, not into
-the source checkout:
+The Slurm script writes logs and model outputs relative to `multiclassifier/`,
+matching the parent `run.slurm` pattern:
 
 ```text
-/scratch/gpfs/IOJALVO/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier/results/SLURM/2026_06_07_model2_segmented_top2
+logs/
+results/SLURM/model2_segmented_top2_${RUN_DATE}
 ```
 
-Override `SCRATCH_WORK_ROOT` or `OUTPUT_ROOT` when submitting if you want a
-different writable location. If the top-level scratch directory is also not
-writable, pass Slurm stdout/stderr paths explicitly with `sbatch --output ...`
-and `--error ...`.
+Override `RUN_TAG` or `OUTPUT_ROOT` when submitting if you want a different
+folder name.

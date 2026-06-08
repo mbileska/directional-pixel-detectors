@@ -12,6 +12,7 @@ import argparse
 import json
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple
 
@@ -33,7 +34,11 @@ DEFAULT_DATA_DIR = Path("/scratch/gpfs/IOJALVO/mb7126/SmartPixels/giuData/data/d
 DEFAULT_RESULTS_ROOT = Path(
     os.environ.get(
         "OUTPUT_ROOT",
-        "/scratch/gpfs/IOJALVO/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier/results/SLURM/2026_06_07_model2_segmented_top2",
+        str(
+            SCRIPT_DIR
+            / "results/SLURM"
+            / os.environ.get("RUN_TAG", f"model2_segmented_top2_{datetime.now().strftime('%Y%m%d')}")
+        ),
     )
 )
 
