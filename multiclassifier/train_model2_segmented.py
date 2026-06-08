@@ -418,6 +418,7 @@ def train_qkeras(args: argparse.Namespace, data: Tuple[np.ndarray, np.ndarray, n
     metrics = {
         "loss": float(score[0]),
         "accuracy": float(score[1]),
+        "balanced_accuracy": balanced_accuracy_np(y_test, predicted),
         **phys,
     }
     save_json(csv_dir / f"{run_prefix}_confusion_matrix.json", confusion_matrix_dict(y_test, predicted))

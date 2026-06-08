@@ -59,6 +59,20 @@ BALANCE_CLASSES=1 sbatch --array=0-23 run_model2_segmented.slurm
 LGN_MAX_STEPS=5000 sbatch --array=24-71 run_model2_segmented.slurm
 ```
 
+After the Slurm jobs finish, make the acceptance curves and balanced-accuracy
+summary from the saved prediction CSVs:
+
+```bash
+python evaluate_acceptance.py \
+  --results-root results/SLURM/2026_06_07_model2_segmented_top2 \
+  --outdir results/acceptance_model2_segmented
+```
+
+The script prints `balanced_accuracy` for each model group and writes
+`balanced_accuracy.csv`, `acceptance_bins.csv`, `acceptance.png`, and
+`acceptance.pdf`. Use `--group-by run` if you want one curve per local segment
+instead of aggregating local segments by model name.
+
 The script preserves the notebook's default preprocessing: no scaling, sparse
 integer labels, and padded feature columns `14`, `15`, and `16`. Set
 `--no-pad-like-notebook` only if you intentionally want the raw CSV columns.
