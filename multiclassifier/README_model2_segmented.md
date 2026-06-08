@@ -28,44 +28,42 @@ python train_model2_segmented.py \
   --output results/model2_segmented/qkeras
 ```
 
-Submit the two highest-precision QKeras quantization variants across all twelve local bins:
+Submit the QKeras variant across all twelve local bins:
 
 ```bash
-sbatch --array=0-23 run_model2_segmented.slurm
+sbatch --array=0-11 run_model2_segmented.slurm
 ```
 
-Submit the two largest LGN size variants with tau 20 and 40 across all twelve local bins:
+Submit the LGN tau 20 and 40 variants across all twelve local bins:
 
 ```bash
-sbatch --array=24-71 run_model2_segmented.slurm
+sbatch --array=12-35 run_model2_segmented.slurm
 ```
 
 Submit the full reduced comparison:
 
 ```bash
-sbatch --array=0-71 run_model2_segmented.slurm
+sbatch --array=0-35 run_model2_segmented.slurm
 ```
 
-This is 72 jobs total:
+This is 36 jobs total:
 
 ```text
-(2 QKeras + 2 LGN sizes * 2 taus) * 12 local bins
+(1 QKeras + 1 LGN size * 2 taus) * 12 local bins
 ```
 
 Useful Slurm overrides:
 
 ```bash
-BALANCE_CLASSES=1 sbatch --array=0-23 run_model2_segmented.slurm
-LGN_MAX_STEPS=5000 sbatch --array=24-71 run_model2_segmented.slurm
+BALANCE_CLASSES=1 sbatch --array=0-11 run_model2_segmented.slurm
+LGN_MAX_STEPS=5000 sbatch --array=12-35 run_model2_segmented.slurm
 ```
 
 After the Slurm jobs finish, make the acceptance curves and balanced-accuracy
 summary from the saved prediction CSVs:
 
 ```bash
-python evaluate_acceptance.py \
-  --results-root results/SLURM/2026_06_07_model2_segmented_top2 \
-  --outdir results/acceptance_model2_segmented
+python evaluate_acceptance.py
 ```
 
 The script prints `balanced_accuracy` for each model group and writes
@@ -76,3 +74,15 @@ instead of aggregating local segments by model name.
 The script preserves the notebook's default preprocessing: no scaling, sparse
 integer labels, and padded feature columns `14`, `15`, and `16`. Set
 `--no-pad-like-notebook` only if you intentionally want the raw CSV columns.
+
+The Slurm script writes logs and model outputs to scratch by default, not into
+the source checkout:
+
+```text
+/scratch/gpfs/IOJALVO/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier/results/SLURM/2026_06_07_model2_segmented_top2
+```
+
+Override `SCRATCH_WORK_ROOT` or `OUTPUT_ROOT` when submitting if you want a
+different writable location. If the top-level scratch directory is also not
+writable, pass Slurm stdout/stderr paths explicitly with `sbatch --output ...`
+and `--error ...`.

@@ -30,6 +30,12 @@ N_CLASSES = 3
 HIGH_PT_CLASS = 0
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_DATA_DIR = Path("/scratch/gpfs/IOJALVO/mb7126/SmartPixels/giuData/data/ds8_only/dec6_ds8_quant")
+DEFAULT_RESULTS_ROOT = Path(
+    os.environ.get(
+        "OUTPUT_ROOT",
+        "/scratch/gpfs/IOJALVO/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier/results/SLURM/2026_06_07_model2_segmented_top2",
+    )
+)
 
 EDGES = np.array(
     [
@@ -303,7 +309,7 @@ def main() -> None:
         "--results-root",
         "-r",
         type=Path,
-        default=SCRIPT_DIR / "results/SLURM/2026_06_07_model2_segmented_top2",
+        default=DEFAULT_RESULTS_ROOT,
         help="Root produced by run_model2_segmented.slurm.",
     )
     parser.add_argument(

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=model2seg
-#SBATCH --output=logs/model2seg_%A_%a.out
-#SBATCH --error=logs/model2seg_%A_%a.err
+#SBATCH --output=/scratch/gpfs/IOJALVO/mb7126/SmartPixels/model2seg_%A_%a.out
+#SBATCH --error=/scratch/gpfs/IOJALVO/mb7126/SmartPixels/model2seg_%A_%a.err
 #SBATCH --time=2:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -20,7 +20,8 @@ cd "$SCRIPT_DIR"
 #   All:         sbatch --array=0-35 run_model2_segmented.slurm
 
 DATA_DIR="${DATA_DIR:-/scratch/gpfs/IOJALVO/mb7126/SmartPixels/giuData/data/ds8_only/dec6_ds8_quant}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-results/SLURM/2026_06_07_model2_segmented_top2}"
+SCRATCH_WORK_ROOT="${SCRATCH_WORK_ROOT:-/scratch/gpfs/IOJALVO/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-${SCRATCH_WORK_ROOT}/results/SLURM/2026_06_07_model2_segmented_top2}"
 RESULTS_FILE="${RESULTS_FILE:-${OUTPUT_ROOT}/results.csv}"
 
 QKERAS_BATCH_SIZE="${QKERAS_BATCH_SIZE:-1024}"
@@ -72,7 +73,7 @@ if [[ "$BALANCE_CLASSES" == "1" ]]; then
   COMMON_ARGS+=(--balance-classes)
 fi
 
-mkdir -p logs "$OUTPUT_ROOT"
+mkdir -p "$OUTPUT_ROOT"
 
 if (( ARCH_INDEX < N_QKERAS )); then
   MODEL="${QKERAS_MODELS[$ARCH_INDEX]}"
