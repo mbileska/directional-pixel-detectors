@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=model2seg
-#SBATCH --output=logs/model2seg_%A_%a.out
-#SBATCH --error=logs/model2seg_%A_%a.err
+#SBATCH --output=/home/mbileska/SmartPixels/directional-pixel-detectors/multiclassifier/logs/model2seg_%A_%a.out
+#SBATCH --error=/home/mbileska/SmartPixels/directional-pixel-detectors/multiclassifier/logs/model2seg_%A_%a.err
 #SBATCH --time=2:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -24,6 +24,9 @@ RUN_DATE="${RUN_DATE:-$(date +%Y%m%d)}"
 RUN_TAG="${RUN_TAG:-model2_segmented_top2_${RUN_DATE}}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-results/SLURM/${RUN_TAG}}"
 RESULTS_FILE="${RESULTS_FILE:-${OUTPUT_ROOT}/results.csv}"
+DEVICE="${DEVICE:-cuda}"
+MAX_TRAIN_SAMPLES="${MAX_TRAIN_SAMPLES:-}"
+MAX_TEST_SAMPLES="${MAX_TEST_SAMPLES:-}"
 
 QKERAS_BATCH_SIZE="${QKERAS_BATCH_SIZE:-1024}"
 QKERAS_LR="${QKERAS_LR:-0.001}"
@@ -64,7 +67,7 @@ LOCAL_ID=$((SLURM_ARRAY_TASK_ID % N_LOCALS))
 COMMON_ARGS=(
   --data-dir "$DATA_DIR"
   --local-id "$LOCAL_ID"
-  --device cuda
+  --device "$DEVICE"
   --validation-split "$VALIDATION_SPLIT"
   --seed "$SEED"
   --results-file "$RESULTS_FILE"
@@ -72,6 +75,12 @@ COMMON_ARGS=(
 
 if [[ "$BALANCE_CLASSES" == "1" ]]; then
   COMMON_ARGS+=(--balance-classes)
+fi
+if [[ -n "$MAX_TRAIN_SAMPLES" ]]; then
+  COMMON_ARGS+=(--max-train-samples "$MAX_TRAIN_SAMPLES")
+fi
+if [[ -n "$MAX_TEST_SAMPLES" ]]; then
+  COMMON_ARGS+=(--max-test-samples "$MAX_TEST_SAMPLES")
 fi
 
 mkdir -p logs "$OUTPUT_ROOT"
