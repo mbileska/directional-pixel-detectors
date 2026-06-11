@@ -1,7 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=model2seg
-#SBATCH --output=/home/mbileska/SmartPixels/directional-pixel-detectors/multiclassifier/logs/model2seg_%A_%a.out
-#SBATCH --error=/home/mbileska/SmartPixels/directional-pixel-detectors/multiclassifier/logs/model2seg_%A_%a.err
+#SBATCH --chdir=/home/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier
+#SBATCH --output=logs/model2seg_%A_%a.out
+#SBATCH --error=logs/model2seg_%A_%a.err
 #SBATCH --time=2:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
@@ -11,7 +12,7 @@
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${SCRIPT_DIR:-/home/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier}"
 cd "$SCRIPT_DIR"
 
 # Submit ranges:
