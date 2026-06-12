@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -125,6 +126,19 @@ def find_single_csv(csv_dir: Path, suffix: str) -> Path:
     return matches[0]
 
 
+def infer_local_id(model_prefix: str) -> Optional[int]:
+    match = re.search(r"ds8l(\d+)_", model_prefix)
+    return int(match.group(1)) if match else None
+
+
+def infer_model_name(run_dir: Path, metadata: Dict) -> str:
+    if metadata.get("model"):
+        return str(metadata["model"])
+    if run_dir.name.startswith("local_") and run_dir.parent.name:
+        return run_dir.parent.name
+    return run_dir.name
+
+
 def resolve_pt_file(metadata: Dict, run_dir: Path, data_dir: Optional[Path]) -> Path:
     candidates: List[Path] = []
     if metadata.get("pt_file"):
@@ -141,39 +155,100 @@ def resolve_pt_file(metadata: Dict, run_dir: Path, data_dir: Optional[Path]) -> 
     raise FileNotFoundError(f"No true-pT file found for {run_dir}. Tried: {joined}")
 
 
-def discover_runs(results_root: Path, data_dir: Optional[Path]) -> List[RunRecord]:
-    records: List[RunRecord] = []
-    for metadata_file in sorted(results_root.rglob("metadata.json")):
-        run_dir = metadata_file.parent
-        csv_dir = run_dir / "csv"
-        if not csv_dir.is_dir():
-            continue
+def build_run_record(
+    run_dir: Path,
+    metadata: Dict,
+    data_dir: Optional[Path],
+    *,
+    predictions_file: Optional[Path] = None,
+) -> Optional[RunRecord]:
+    csv_dir = run_dir / "csv"
+    if predictions_file is not None:
+        csv_dir = predictions_file.parent
+    if not csv_dir.is_dir():
+        return None
 
-        metadata = read_json(metadata_file)
+    try:
         model_prefix = str(metadata.get("model_prefix") or "")
-        if model_prefix:
+        if predictions_file is not None:
+            model_prefix = predictions_file.name.removesuffix("_predictionsFiles.csv")
+            truth_file = csv_dir / f"{model_prefix}_true.csv"
+            if not truth_file.exists():
+                truth_file = find_single_csv(csv_dir, "_true.csv")
+        elif model_prefix:
             predictions_file = csv_dir / f"{model_prefix}_predictionsFiles.csv"
             truth_file = csv_dir / f"{model_prefix}_true.csv"
         else:
             predictions_file = find_single_csv(csv_dir, "_predictionsFiles.csv")
             truth_file = find_single_csv(csv_dir, "_true.csv")
             model_prefix = predictions_file.name.removesuffix("_predictionsFiles.csv")
+    except FileNotFoundError as exc:
+        print(f"[WARN] Skipping {run_dir}: {exc}")
+        return None
 
-        if not predictions_file.exists() or not truth_file.exists():
-            print(f"[WARN] Skipping {run_dir}: missing prediction/true CSV.")
+    if not predictions_file.exists() or not truth_file.exists():
+        print(f"[WARN] Skipping {run_dir}: missing prediction/true CSV.")
+        return None
+
+    local_id = metadata.get("local_id")
+    if local_id is None:
+        local_id = infer_local_id(model_prefix)
+        metadata = {**metadata, "local_id": local_id}
+
+    return RunRecord(
+        run_dir=run_dir,
+        backend=str(metadata.get("backend", "unknown")),
+        model=infer_model_name(run_dir, metadata),
+        model_prefix=model_prefix,
+        local_id=local_id,
+        predictions_file=predictions_file,
+        truth_file=truth_file,
+        pt_file=resolve_pt_file(metadata, run_dir, data_dir),
+    )
+
+
+def discover_runs(results_root: Path, data_dir: Optional[Path]) -> List[RunRecord]:
+    records: List[RunRecord] = []
+    seen_predictions = set()
+
+    for metadata_file in sorted(results_root.rglob("metadata.json")):
+        run_dir = metadata_file.parent
+        record = build_run_record(run_dir, read_json(metadata_file), data_dir)
+        if record is None:
             continue
+        records.append(record)
+        seen_predictions.add(record.predictions_file.resolve())
 
-        records.append(
-            RunRecord(
-                run_dir=run_dir,
-                backend=str(metadata.get("backend", "unknown")),
-                model=str(metadata.get("model", run_dir.name)),
-                model_prefix=model_prefix,
-                local_id=metadata.get("local_id"),
+    for predictions_file in sorted(results_root.rglob("*_predictionsFiles.csv")):
+        if predictions_file.resolve() in seen_predictions:
+            continue
+        run_dir = predictions_file.parent.parent
+        metadata_file = run_dir / "metadata.json"
+        metadata = read_json(metadata_file) if metadata_file.exists() else {}
+        try:
+            record = build_run_record(
+                run_dir,
+                metadata,
+                data_dir,
                 predictions_file=predictions_file,
-                truth_file=truth_file,
-                pt_file=resolve_pt_file(metadata, run_dir, data_dir),
             )
+        except FileNotFoundError as exc:
+            print(f"[WARN] Skipping {run_dir}: {exc}")
+            continue
+        if record is None:
+            continue
+        records.append(record)
+        seen_predictions.add(record.predictions_file.resolve())
+
+    if not records:
+        metadata_count = sum(1 for _ in results_root.rglob("metadata.json"))
+        prediction_count = sum(1 for _ in results_root.rglob("*_predictionsFiles.csv"))
+        truth_count = sum(1 for _ in results_root.rglob("*_true.csv"))
+        print(
+            "[WARN] Discovery found "
+            f"{metadata_count} metadata.json file(s), "
+            f"{prediction_count} prediction CSV(s), and "
+            f"{truth_count} truth CSV(s) under {results_root}."
         )
     return records
 
@@ -284,7 +359,7 @@ def plot_acceptance(
             centers,
             acc,
             xerr=xerr,
-            yerr=[err_low, err_high],
+            yerr=[np.maximum(err_low, 0.0), np.maximum(err_high, 0.0)],
             marker="o",
             linestyle="-",
             capsize=2.5,
@@ -327,6 +402,7 @@ def main() -> None:
     parser.add_argument("--group-by", choices=("model", "run"), default="model")
     parser.add_argument("--high-pt-class", type=int, default=HIGH_PT_CLASS)
     parser.add_argument("--z", type=float, default=1.0, help="Wilson interval z (1.0 ~ 68%%, 1.96 ~ 95%%).")
+    parser.add_argument("--no-plot", action="store_true", help="Write CSV summaries and skip acceptance image generation.")
     args = parser.parse_args()
 
     results_root = args.results_root.resolve()
@@ -374,7 +450,8 @@ def main() -> None:
     pd.DataFrame(all_rows).to_csv(args.outdir / "acceptance_bins.csv", index=False)
     print(f"Wrote {args.outdir / 'balanced_accuracy.csv'}")
     print(f"Wrote {args.outdir / 'acceptance_bins.csv'}")
-    plot_acceptance(args.outdir, groups, rows_by_label, balanced_by_label, args.high_pt_class)
+    if not args.no_plot:
+        plot_acceptance(args.outdir, groups, rows_by_label, balanced_by_label, args.high_pt_class)
 
 
 if __name__ == "__main__":
