@@ -273,6 +273,31 @@ def balanced_accuracy_np(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float(np.mean(recalls)) if recalls else float("nan")
 
 
+def safe_fraction(mask: np.ndarray, selected: np.ndarray) -> float:
+    denom = int(selected.sum())
+    if denom == 0:
+        return float("nan")
+    return float(mask[selected].sum() / denom)
+
+
+def recompute_metrics(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    pt: np.ndarray,
+    high_pt_class: int,
+) -> Dict[str, float]:
+    high_pt_prediction = y_pred == high_pt_class
+    return {
+        "accuracy": float((y_true == y_pred).mean()) if len(y_true) else float("nan"),
+        "balanced_accuracy": balanced_accuracy_np(y_true, y_pred),
+        "nt_gev02": safe_fraction(high_pt_prediction, np.abs(pt) > 0.2),
+        "nt_gev05": safe_fraction(high_pt_prediction, np.abs(pt) > 0.5),
+        "nt_gev10": safe_fraction(high_pt_prediction, np.abs(pt) > 1.0),
+        "nt_gev20": safe_fraction(high_pt_prediction, np.abs(pt) > 2.0),
+        "bkg_rej": safe_fraction(y_pred != high_pt_class, np.abs(pt) < 2.0),
+    }
+
+
 def wilson_interval(k: int, n: int, z: float = 1.0) -> Tuple[float, float]:
     if n == 0:
         return float("nan"), float("nan")
@@ -370,7 +395,7 @@ def plot_acceptance(
             centers,
             acc,
             xerr=xerr,
-            yerr=[np.maximum(err_low, 0.0), np.maximum(err_high, 0.0)],
+            yerr=[np.clip(err_low, 0.0, None), np.clip(err_high, 0.0, None)],
             marker="o",
             linestyle="-",
             capsize=2.5,
@@ -446,7 +471,8 @@ def main() -> None:
         y_true = np.concatenate(group.y_true)
         y_pred = np.concatenate(group.y_pred)
         pt = np.concatenate(group.pt)
-        balanced = balanced_accuracy_np(y_true, y_pred)
+        metrics = recompute_metrics(y_true, y_pred, pt, args.high_pt_class)
+        balanced = metrics["balanced_accuracy"]
         balanced_by_label[group.label] = balanced
         rows = acceptance_rows(group.label, pt, y_pred, EDGES, args.high_pt_class, args.z)
         rows_by_label[group.label] = rows
@@ -456,10 +482,16 @@ def main() -> None:
                 "model": group.label,
                 "runs": len(group.runs),
                 "samples": len(y_true),
-                "balanced_accuracy": balanced,
+                **metrics,
             }
         )
-        print(f"{group.label}: balanced_accuracy={balanced:.6f} runs={len(group.runs)} samples={len(y_true)}")
+        print(
+            f"{group.label}: "
+            f"accuracy={metrics['accuracy']:.6f} "
+            f"balanced_accuracy={metrics['balanced_accuracy']:.6f} "
+            f"bkg_rej={metrics['bkg_rej']:.6f} "
+            f"runs={len(group.runs)} samples={len(y_true)}"
+        )
 
     pd.DataFrame(summary_rows).to_csv(args.outdir / "balanced_accuracy.csv", index=False)
     pd.DataFrame(all_rows).to_csv(args.outdir / "acceptance_bins.csv", index=False)
