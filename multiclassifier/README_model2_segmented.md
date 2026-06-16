@@ -71,6 +71,12 @@ The script prints `balanced_accuracy` for each model group and writes
 `acceptance.pdf`. Use `--group-by run` if you want one curve per local segment
 instead of aggregating local segments by model name.
 
+If prediction CSVs are missing, reload the checkpoints and regenerate them:
+
+```bash
+python evaluate_acceptance.py --results-root results/SLURM/<run_tag> --backend lgn --eval-source model --device cuda --outdir results/acceptance_lgn
+```
+
 The script preserves the notebook's default preprocessing: no scaling, sparse
 integer labels, and padded feature columns `14`, `15`, and `16`. Set
 `--no-pad-like-notebook` only if you intentionally want the raw CSV columns.
