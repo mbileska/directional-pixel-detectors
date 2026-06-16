@@ -139,6 +139,17 @@ def infer_model_name(run_dir: Path, metadata: Dict) -> str:
     return run_dir.name
 
 
+def infer_backend(run_dir: Path, metadata: Dict, model_prefix: str) -> str:
+    if metadata.get("backend"):
+        return str(metadata["backend"])
+    lowered = " ".join(str(part).lower() for part in run_dir.parts)
+    if "lgn" in lowered or "model2lgn" in model_prefix.lower():
+        return "lgn"
+    if "qkeras" in lowered or "qkeras" in model_prefix.lower():
+        return "qkeras"
+    return "unknown"
+
+
 def resolve_pt_file(metadata: Dict, run_dir: Path, data_dir: Optional[Path]) -> Path:
     candidates: List[Path] = []
     if metadata.get("pt_file"):
@@ -197,7 +208,7 @@ def build_run_record(
 
     return RunRecord(
         run_dir=run_dir,
-        backend=str(metadata.get("backend", "unknown")),
+        backend=infer_backend(run_dir, metadata, model_prefix),
         model=infer_model_name(run_dir, metadata),
         model_prefix=model_prefix,
         local_id=local_id,
@@ -400,6 +411,7 @@ def main() -> None:
     )
     parser.add_argument("--outdir", "-o", type=Path, default=SCRIPT_DIR / "results/acceptance_model2_segmented")
     parser.add_argument("--group-by", choices=("model", "run"), default="model")
+    parser.add_argument("--backend", choices=("all", "qkeras", "lgn"), default="all")
     parser.add_argument("--high-pt-class", type=int, default=HIGH_PT_CLASS)
     parser.add_argument("--z", type=float, default=1.0, help="Wilson interval z (1.0 ~ 68%%, 1.96 ~ 95%%).")
     parser.add_argument("--no-plot", action="store_true", help="Write CSV summaries and skip acceptance image generation.")
@@ -415,8 +427,11 @@ def main() -> None:
         data_dir = None
 
     records = discover_runs(results_root, data_dir)
+    if args.backend != "all":
+        records = [record for record in records if record.backend == args.backend]
     if not records:
-        raise SystemExit(f"No completed run metadata with prediction CSVs found under {results_root}")
+        backend_note = "" if args.backend == "all" else f" for backend={args.backend}"
+        raise SystemExit(f"No completed run metadata with prediction CSVs found{backend_note} under {results_root}")
 
     args.outdir.mkdir(parents=True, exist_ok=True)
     groups = make_groups(records, args.group_by)
