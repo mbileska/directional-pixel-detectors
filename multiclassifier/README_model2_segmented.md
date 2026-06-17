@@ -28,35 +28,34 @@ python train_model2_segmented.py \
   --output results/model2_segmented/qkeras
 ```
 
-Submit the QKeras variant across all twelve local bins:
+Submit the current small-LGN diagnostic sweep across all twelve local bins for
+tau 20 and 40:
 
 ```bash
-sbatch --array=0-11 run_model2_segmented.slurm
+sbatch run_model2_segmented.slurm
 ```
 
-Submit the LGN tau 20 and 40 variants across all twelve local bins:
-
-```bash
-sbatch --array=12-35 run_model2_segmented.slurm
-```
-
-Submit the full reduced comparison:
-
-```bash
-sbatch --array=0-35 run_model2_segmented.slurm
-```
-
-This is 36 jobs total:
+This is 24 jobs total:
 
 ```text
-(1 QKeras + 1 LGN size * 2 taus) * 12 local bins
+(1 small LGN size * 2 taus) * 12 local bins
 ```
+
+The current launcher uses:
+
+```text
+s_debug_p10M: 2048, 2048, 1024 hidden units with n_bits=100
+```
+
+The larger QKeras/full-LGN models are still registered in
+`train_model2_segmented.py`, but this Slurm file is intentionally restricted to
+the small LGN diagnostic run.
 
 Useful Slurm overrides:
 
 ```bash
-BALANCE_CLASSES=1 sbatch --array=0-11 run_model2_segmented.slurm
-LGN_MAX_STEPS=5000 sbatch --array=12-35 run_model2_segmented.slurm
+BALANCE_CLASSES=1 sbatch run_model2_segmented.slurm
+LGN_MAX_STEPS=10000 sbatch run_model2_segmented.slurm
 ```
 
 After the Slurm jobs finish, make the acceptance curves and balanced-accuracy

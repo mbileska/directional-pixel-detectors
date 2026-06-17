@@ -61,6 +61,7 @@ QKERAS_SPECS: Tuple[QKerasSpec, ...] = (
 
 
 LGN_SIZE_DIMS: Tuple[Tuple[str, str, Tuple[int, ...]], ...] = (
+    ("s_debug_p10M", "lgn-dense-2-dense-100_128_-model2lgnDebug_p10M", (2048, 2048, 1024)),
     ("s04_p434M", "lgn-dense-2-dense-100_128_-model2lgnFull_s04_p434M", (10400, 10400, 10400, 6900, 6900, 6900, 5202)),
     ("s05_currentWide_p577M", "lgn-dense-2-dense-100_128_-model2lgnFull", (12000, 12000, 12000, 8000, 8000, 8000, 6000)),
 )

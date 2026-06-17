@@ -7,7 +7,7 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --array=0-35
+#SBATCH --array=0-23
 #SBATCH --signal=B:TERM@120
 
 set -euo pipefail
@@ -15,14 +15,13 @@ set -euo pipefail
 SCRIPT_DIR="${SCRIPT_DIR:-/home/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier}"
 cd "$SCRIPT_DIR"
 
-# Submit ranges:
-#   QKeras only: sbatch --array=0-11 run_model2_segmented.slurm
-#   LGN only:    sbatch --array=12-35 run_model2_segmented.slurm
-#   All:         sbatch --array=0-35 run_model2_segmented.slurm
+# Submit:
+#   Small LGN tau 20 and 40 across all locals:
+#   sbatch run_model2_segmented.slurm
 
 DATA_DIR="${DATA_DIR:-/scratch/gpfs/IOJALVO/mb7126/SmartPixels/giuData/data/ds8_only/dec6_ds8_quant}"
 RUN_DATE="${RUN_DATE:-$(date +%Y%m%d)}"
-RUN_TAG="${RUN_TAG:-model2_segmented_top2_${RUN_DATE}}"
+RUN_TAG="${RUN_TAG:-model2_segmented_lgn_debug_${RUN_DATE}}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-results/SLURM/${RUN_TAG}}"
 RESULTS_FILE="${RESULTS_FILE:-${OUTPUT_ROOT}/results.csv}"
 DEVICE="${DEVICE:-cuda}"
@@ -37,25 +36,23 @@ QKERAS_PATIENCE="${QKERAS_PATIENCE:-20}"
 LGN_BATCH_SIZE="${LGN_BATCH_SIZE:-1024}"
 LGN_LR="${LGN_LR:-0.01}"
 LGN_EPOCHS="${LGN_EPOCHS:-0}"
-LGN_EVAL_FREQ="${LGN_EVAL_FREQ:-200}"
-LGN_MAX_STEPS="${LGN_MAX_STEPS:-}"
+LGN_EVAL_FREQ="${LGN_EVAL_FREQ:-50}"
+LGN_MAX_STEPS="${LGN_MAX_STEPS:-5000}"
 LGN_COMPILE="${LGN_COMPILE:-1}"
-LGN_DISABLE_EARLY_STOPPING="${LGN_DISABLE_EARLY_STOPPING:-1}"
+LGN_DISABLE_EARLY_STOPPING="${LGN_DISABLE_EARLY_STOPPING:-0}"
 
 BALANCE_CLASSES="${BALANCE_CLASSES:-0}"
 VALIDATION_SPLIT="${VALIDATION_SPLIT:-0.2}"
 SEED="${SEED:-42}"
 
-QKERAS_MODELS=(
-  "qkeras-model-2-w5a10-adc2a"
-)
+QKERAS_MODELS=()
 
 TAUS=(20 40)
 SIZE_LABELS=(
-  "s05_currentWide_p577M"
+  "s_debug_p10M"
 )
 LGN_MODEL_PREFIXES=(
-  "lgn-dense-2-dense-100_128_-model2lgnFull"
+  "lgn-dense-2-dense-100_128_-model2lgnDebug_p10M"
 )
 
 N_LOCALS=12
