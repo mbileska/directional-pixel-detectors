@@ -409,9 +409,9 @@ def materialize_predictions_from_checkpoint(
 def discover_checkpoints(results_root: Path) -> List[Path]:
     by_run_dir: Dict[Path, Path] = {}
 
-    for checkpoint_file in sorted(results_root.rglob("final_model.pth")):
-        by_run_dir[checkpoint_file.parent.parent] = checkpoint_file
     for checkpoint_file in sorted(results_root.rglob("best_model.pth")):
+        by_run_dir[checkpoint_file.parent.parent] = checkpoint_file
+    for checkpoint_file in sorted(results_root.rglob("final_model.pth")):
         by_run_dir.setdefault(checkpoint_file.parent.parent, checkpoint_file)
     for checkpoint_file in sorted(results_root.rglob("*model.h5")):
         if checkpoint_file.name.endswith("model_q_weights.h5"):
