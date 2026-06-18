@@ -3,12 +3,12 @@
 #SBATCH --chdir=/home/mb7126/SmartPixels/directional-pixel-detectors/multiclassifier
 #SBATCH --output=logs/model2seg_%A_%a.out
 #SBATCH --error=logs/model2seg_%A_%a.err
-#SBATCH --time=2:00:00
+#SBATCH --time=5:00:00
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
 #SBATCH --array=0-23
-#SBATCH --signal=B:TERM@120
+#SBATCH --signal=TERM@300
 
 set -euo pipefail
 
@@ -37,9 +37,9 @@ LGN_BATCH_SIZE="${LGN_BATCH_SIZE:-1024}"
 LGN_LR="${LGN_LR:-0.01}"
 LGN_EPOCHS="${LGN_EPOCHS:-0}"
 LGN_EVAL_FREQ="${LGN_EVAL_FREQ:-50}"
-LGN_MAX_STEPS="${LGN_MAX_STEPS:-5000}"
+LGN_MAX_STEPS="${LGN_MAX_STEPS:-}"
 LGN_COMPILE="${LGN_COMPILE:-1}"
-LGN_DISABLE_EARLY_STOPPING="${LGN_DISABLE_EARLY_STOPPING:-0}"
+LGN_DISABLE_EARLY_STOPPING="${LGN_DISABLE_EARLY_STOPPING:-1}"
 
 BALANCE_CLASSES="${BALANCE_CLASSES:-0}"
 VALIDATION_SPLIT="${VALIDATION_SPLIT:-0.2}"

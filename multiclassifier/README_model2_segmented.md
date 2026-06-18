@@ -56,7 +56,12 @@ Useful Slurm overrides:
 ```bash
 BALANCE_CLASSES=1 sbatch run_model2_segmented.slurm
 LGN_MAX_STEPS=10000 sbatch run_model2_segmented.slurm
+LGN_DISABLE_EARLY_STOPPING=0 LGN_MAX_STEPS=5000 sbatch run_model2_segmented.slurm
 ```
+
+By default, the LGN launcher disables early stopping and does not set
+`LGN_MAX_STEPS`, so the jobs train until the Slurm walltime signal and then save
+their final outputs.
 
 After the Slurm jobs finish, make the acceptance curves and balanced-accuracy
 summary from the saved prediction CSVs:
