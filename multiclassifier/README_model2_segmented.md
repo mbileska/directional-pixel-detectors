@@ -44,7 +44,7 @@ This is 24 jobs total:
 The current launcher uses:
 
 ```text
-s_debug_p10M: 2048, 2048, 1023 hidden units with n_bits=100
+s_debug_p10M: 2048, 2048, 1026 hidden units with n_bits=100 and lut_rank=2
 ```
 
 The larger QKeras/full-LGN models are still registered in

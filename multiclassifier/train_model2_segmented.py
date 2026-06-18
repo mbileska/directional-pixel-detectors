@@ -32,6 +32,7 @@ import pandas as pd
 
 
 N_CLASSES = 3
+LGN_LUT_RANK = 2
 LOCAL_IDS = tuple(range(12))
 DEFAULT_DATA_DIR = Path("/scratch/gpfs/IOJALVO/mb7126/SmartPixels/giuData/data/ds8_only/dec6_ds8_quant")
 
@@ -61,7 +62,7 @@ QKERAS_SPECS: Tuple[QKerasSpec, ...] = (
 
 
 LGN_SIZE_DIMS: Tuple[Tuple[str, str, Tuple[int, ...]], ...] = (
-    ("s_debug_p10M", "lgn-dense-2-dense-100_128_-model2lgnDebug_p10M", (2048, 2048, 1023)),
+    ("s_debug_p10M", "lgn-dense-2-dense-100_128_-model2lgnDebug_p10M", (2048, 2048, 1026)),
     ("s04_p434M", "lgn-dense-2-dense-100_128_-model2lgnFull_s04_p434M", (10400, 10400, 10400, 6900, 6900, 6900, 5202)),
     ("s05_currentWide_p577M", "lgn-dense-2-dense-100_128_-model2lgnFull", (12000, 12000, 12000, 8000, 8000, 8000, 6000)),
 )
@@ -470,6 +471,15 @@ class DenseOnlyLGNModel2Full:
                 f"LGN spec {spec.name} must end with a hidden dimension divisible by "
                 f"{N_CLASSES} for GroupSum; got hidden_dims={spec.hidden_dims}."
             )
+        prev_dim = input_dim * spec.n_bits
+        for hidden_dim in spec.hidden_dims:
+            if hidden_dim * LGN_LUT_RANK < prev_dim:
+                raise ValueError(
+                    f"LGN spec {spec.name} has incompatible LogicDense transition "
+                    f"{prev_dim}->{hidden_dim}: hidden_dim * lut_rank must cover the input "
+                    f"dimension, but {hidden_dim} * {LGN_LUT_RANK} < {prev_dim}."
+                )
+            prev_dim = hidden_dim
 
         FixedBinarization, GroupSum, LogicDense = import_torchlogix_layers()
 
