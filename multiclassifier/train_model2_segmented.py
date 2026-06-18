@@ -61,7 +61,7 @@ QKERAS_SPECS: Tuple[QKerasSpec, ...] = (
 
 
 LGN_SIZE_DIMS: Tuple[Tuple[str, str, Tuple[int, ...]], ...] = (
-    ("s_debug_p10M", "lgn-dense-2-dense-100_128_-model2lgnDebug_p10M", (2048, 2048, 1024)),
+    ("s_debug_p10M", "lgn-dense-2-dense-100_128_-model2lgnDebug_p10M", (2048, 2048, 1023)),
     ("s04_p434M", "lgn-dense-2-dense-100_128_-model2lgnFull_s04_p434M", (10400, 10400, 10400, 6900, 6900, 6900, 5202)),
     ("s05_currentWide_p577M", "lgn-dense-2-dense-100_128_-model2lgnFull", (12000, 12000, 12000, 8000, 8000, 8000, 6000)),
 )
@@ -464,6 +464,12 @@ class DenseOnlyLGNModel2Full:
 
     def __init__(self, input_dim: int, spec: LGNSpec, device: str, thresholds: Any):
         import torch
+
+        if not spec.hidden_dims or spec.hidden_dims[-1] % N_CLASSES != 0:
+            raise ValueError(
+                f"LGN spec {spec.name} must end with a hidden dimension divisible by "
+                f"{N_CLASSES} for GroupSum; got hidden_dims={spec.hidden_dims}."
+            )
 
         FixedBinarization, GroupSum, LogicDense = import_torchlogix_layers()
 
