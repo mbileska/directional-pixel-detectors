@@ -63,6 +63,8 @@ QKERAS_SPECS: Tuple[QKerasSpec, ...] = (
 
 LGN_SIZE_DIMS: Tuple[Tuple[str, str, Tuple[int, ...]], ...] = (
     ("s_debug_p10M", "lgn-dense-2-dense-100_128_-model2lgnDebug_p10M", (2048, 2048, 1026)),
+    ("s_medium_p15M", "lgn-dense-2-dense-100_128_-model2lgnMedium_p15M", (3072, 3072, 1536)),
+    ("s_wide_p20M", "lgn-dense-2-dense-100_128_-model2lgnWide_p20M", (4096, 4096, 2049)),
     ("s04_p434M", "lgn-dense-2-dense-100_128_-model2lgnFull_s04_p434M", (10400, 10400, 10400, 6900, 6900, 6900, 5202)),
     ("s05_currentWide_p577M", "lgn-dense-2-dense-100_128_-model2lgnFull", (12000, 12000, 12000, 8000, 8000, 8000, 6000)),
 )
@@ -639,6 +641,10 @@ def train_lgn(args: argparse.Namespace, data: Tuple[np.ndarray, np.ndarray, np.n
 
     x_train_all, y_train_all, x_test, y_test, pt_file, feature_columns = data
     spec = LGN_BY_NAME[args.model]
+    # LGN sweeps are walltime-bound. Do not let stale launcher overrides stop them early.
+    args.epochs = 0
+    args.max_steps = None
+    args.disable_early_stopping = True
 
     set_global_seed(args.seed)
     torch.manual_seed(args.seed)
@@ -723,6 +729,13 @@ def train_lgn(args: argparse.Namespace, data: Tuple[np.ndarray, np.ndarray, np.n
     step = 0
     epoch = 0
     stop = False
+    print(
+        "LGN stop policy: "
+        f"epochs={'unbounded' if args.epochs == 0 else args.epochs}, "
+        f"max_steps={'none' if args.max_steps is None else args.max_steps}, "
+        f"early_stopping={'disabled' if args.disable_early_stopping else 'enabled'}, "
+        f"patience={args.early_stopping_patience}, eval_freq={args.eval_freq}"
+    )
 
     while not stop and not STOP_REQUESTED and (args.epochs == 0 or epoch < args.epochs):
         model.train()

@@ -35,33 +35,32 @@ tau 20 and 40:
 sbatch run_model2_segmented.slurm
 ```
 
-This is 24 jobs total:
+This is 36 jobs total:
 
 ```text
-(1 small LGN size * 2 taus) * 12 local bins
+3 LGN sizes * 2 taus * 6 local bins = 36 jobs
 ```
 
-The current launcher uses:
+The current launcher uses local bins `0, 2, 4, 7, 9, 11` and:
 
 ```text
 s_debug_p10M: 2048, 2048, 1026 hidden units with n_bits=100 and lut_rank=2
+s_medium_p15M: 3072, 3072, 1536 hidden units with n_bits=100 and lut_rank=2
+s_wide_p20M: 4096, 4096, 2049 hidden units with n_bits=100 and lut_rank=2
 ```
 
-The larger QKeras/full-LGN models are still registered in
-`train_model2_segmented.py`, but this Slurm file is intentionally restricted to
-the small LGN diagnostic run.
+Each LGN size runs both tau 20 and tau 40. The larger full-LGN models are still
+registered in `train_model2_segmented.py`, but this Slurm file is intentionally
+restricted to the compact 36-job LGN sweep.
 
 Useful Slurm overrides:
 
 ```bash
 BALANCE_CLASSES=1 sbatch run_model2_segmented.slurm
-LGN_MAX_STEPS=10000 sbatch run_model2_segmented.slurm
-LGN_DISABLE_EARLY_STOPPING=0 LGN_MAX_STEPS=5000 sbatch run_model2_segmented.slurm
 ```
 
-By default, the LGN launcher disables early stopping and does not set
-`LGN_MAX_STEPS`, so the jobs train until the Slurm walltime signal and then save
-their final outputs.
+LGN training is walltime-bound: early stopping is forced off in the trainer, the
+launcher does not set a max-step cap, and the Slurm allocation is 5 hours.
 
 After the Slurm jobs finish, make the acceptance curves and balanced-accuracy
 summary from the saved prediction CSVs:
